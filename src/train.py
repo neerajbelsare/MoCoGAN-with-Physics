@@ -79,13 +79,13 @@ def video_transform(video, image_transform):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    print args
+    print(args)
 
     n_channels = int(args['--n_channels'])
 
     image_transforms = transforms.Compose([
         PIL.Image.fromarray,
-        transforms.Scale(int(args["--image_size"])),
+        transforms.Resize(int(args["--image_size"])),
         transforms.ToTensor(),
         lambda x: x[:n_channels, ::],
         transforms.Normalize((0.5, 0.5, .5), (0.5, 0.5, 0.5)),

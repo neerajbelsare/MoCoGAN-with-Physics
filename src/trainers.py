@@ -91,29 +91,10 @@ class Trainer(object):
         l_discriminator = self.gan_criterion(real_labels, real_gt) + \
                           self.gan_criterion(fake_labels, fake_gt)
 
-        # update image discriminator here
-
-        # sample again for videos
-
-        # update video discriminator
-
-        # sample again
-        # - videos
-        # - images
-
-        # l_vidoes + l_images -> l
-        # l.backward()
-        # opt.step()
-
-
-        #  sample again and compute for generator
-
         fake_gt = self.get_gt_for_generator(batch_size)
-        # to real_gt
         l_generator = self.gan_criterion(fake_labels, fake_gt)
 
         if is_video:
-
             # Ask the video discriminator to learn categories from training videos
             categories_gt = Variable(torch.squeeze(real_batch['categories'].long()))
             l_discriminator += self.category_criterion(real_categorical, categories_gt)
@@ -129,9 +110,9 @@ class Trainer(object):
             self.image_enumerator = enumerate(self.image_sampler)
 
         batch_idx, batch = next(self.image_enumerator)
-        b = batch
+        b = batch.copy()  # Create a copy of the batch to modify
         if self.use_cuda:
-            for k, v in batch.iteritems():
+            for k, v in b.items():  # Changed from .iteritems() to .items()
                 b[k] = v.cuda()
 
         if batch_idx == len(self.image_sampler) - 1:
@@ -144,9 +125,9 @@ class Trainer(object):
             self.video_enumerator = enumerate(self.video_sampler)
 
         batch_idx, batch = next(self.video_enumerator)
-        b = batch
+        b = batch.copy()  # Create a copy of the batch to modify
         if self.use_cuda:
-            for k, v in batch.iteritems():
+            for k, v in b.items():  # Changed from .iteritems() to .items()
                 b[k] = v.cuda()
 
         if batch_idx == len(self.video_sampler) - 1:
@@ -159,8 +140,6 @@ class Trainer(object):
 
         real_batch = sample_true()
         batch = Variable(real_batch['images'], requires_grad=False)
-
-        # util.show_batch(batch.data)
 
         fake_batch, generated_categories = sample_fake(batch_size)
 
@@ -191,7 +170,6 @@ class Trainer(object):
         opt.zero_grad()
 
         # train on images
-
         fake_batch, generated_categories = sample_fake_images(self.image_batch_size)
         fake_labels, fake_categorical = image_discriminator(fake_batch)
         all_ones = self.ones_like(fake_labels)
@@ -199,7 +177,6 @@ class Trainer(object):
         l_generator = self.gan_criterion(fake_labels, all_ones)
 
         # train on videos
-
         fake_batch, generated_categories = sample_fake_videos(self.video_batch_size)
         fake_labels, fake_categorical = video_discriminator(fake_batch)
         all_ones = self.ones_like(fake_labels)
@@ -231,7 +208,6 @@ class Trainer(object):
                                              weight_decay=0.00001)
 
         # training loop
-
         def sample_fake_image_batch(batch_size):
             return generator.sample_images(batch_size)
 
@@ -253,7 +229,6 @@ class Trainer(object):
             video_discriminator.train()
 
             opt_generator.zero_grad()
-
             opt_video_discriminator.zero_grad()
 
             # train image discriminator
@@ -271,22 +246,20 @@ class Trainer(object):
                                          sample_fake_image_batch, sample_fake_video_batch,
                                          opt_generator)
 
-            logs['l_gen'] += l_gen.data[0]
-
-            logs['l_image_dis'] += l_image_dis.data[0]
-            logs['l_video_dis'] += l_video_dis.data[0]
+            logs['l_gen'] += l_gen.data.item()  # Changed from l_gen.data[0] to l_gen.data.item()
+            logs['l_image_dis'] += l_image_dis.data.item()  # Changed from l_image_dis.data[0] to l_image_dis.data.item()
+            logs['l_video_dis'] += l_video_dis.data.item()  # Changed from l_video_dis.data[0] to l_video_dis.data.item()
 
             batch_num += 1
 
             if batch_num % self.log_interval == 0:
-
                 log_string = "Batch %d" % batch_num
-                for k, v in logs.iteritems():
+                for k, v in logs.items():  # Changed from .iteritems() to .items()
                     log_string += " [%s] %5.3f" % (k, v / self.log_interval)
 
                 log_string += ". Took %5.2f" % (time.time() - start_time)
 
-                print log_string
+                print(log_string)
 
                 for tag, value in logs.items():
                     logger.scalar_summary(tag, value / self.log_interval, batch_num)

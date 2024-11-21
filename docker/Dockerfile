@@ -1,21 +1,22 @@
-FROM nvidia/cuda
+FROM nvidia/cuda:11.0.3-base-ubuntu20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install python
 RUN \
   apt-get update && \
-  apt-get install -y python python-dev python-pip && \
+  apt-get install -y python python-dev python3-pip && \
   apt-get install -y git ffmpeg && \
   apt-get install -y cython python-numpy && \
   rm -rf /var/lib/apt/lists/*
 
 # Install pytorch
 RUN \
-  pip install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl && \
-  pip install torchvision 
+  pip3 install torch torchvision torchaudio
 
 # Install dependencies
 RUN \
-  pip install -U docopt pyyaml numpy matplotlib tqdm Pillow tensorflow scipy
+  pip install docopt pyyaml numpy matplotlib tqdm Pillow tensorflow scipy
 
 # Clone the repository
 RUN \
